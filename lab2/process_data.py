@@ -8,13 +8,16 @@ def expfun(t, c1, a, T_inf):
     return - c1 * np.exp(-a * t) + T_inf
 
 rawdata = pd.read_csv('lab2_home_raw_data.csv')
-fig, ax = plt.subplots(2, sharex=True)
+
+fig1, ax1 = plt.subplots(figsize=(7,3), tight_layout=True)
+fig2, ax2 = plt.subplots(figsize=(7,3), tight_layout=True)
+
 # we iterate through each type, of which
 # there are two: (uninsulated, insulated)
 curve_parameters = dict()
 for runtype, d1 in rawdata.groupby('type'):
-    xs = d1['time']
-    ys = d1['tempK']
+    xs = d1['time'][d1['time'] <= 50]
+    ys = d1['tempK'][d1['time'] <= 50] - 273.15
     '''
     fit to our model of the system. For a body for which LC assumption is true, the governing
     equation is given by:
@@ -35,31 +38,29 @@ for runtype, d1 in rawdata.groupby('type'):
     xxs = np.linspace(np.min(xs), np.max(xs), 900)
     yys = expfun(xxs, *params)
     curve_parameters[runtype] = {
-    'c1' : params[0],
-    'hAs/mCv' : params[1],
-    'T_inf' : params[2]
+        'c1' : params[0],
+        'hAs/mCv' : params[1],
+        'T_inf' : params[2]
     }
 
     # we iterate through each run
     if runtype == 'uninsulated':
         for run, d2 in d1.groupby('video_fname'):
-            ax[0].scatter(d2['time'][d2['time'] <= 50], d2['tempK'][d2['time'] <= 50], marker='.', label=runtype)
-        ax[0].plot(xxs, yys, 'k', label='exp fitted - {}'.format(runtype))
-        ax[0].set_ylabel('Temperature (K)')
-        ax[0].set_xlabel('Time (s)')
-        ax[0].legend()
+            ax1.scatter(d2['time'][d2['time'] <= 50], d2['tempK'][d2['time'] <= 50]- 273.15, marker='+', label=runtype)
+        ax1.plot(xxs, yys, 'k', label='exp fitted - {}'.format(runtype))
+        ax1.set_ylabel('Temperature (C)')
+        ax1.set_xlabel('Time (s)')
+        ax1.legend()
 
     elif runtype == 'insulated':
         for run, d2 in d1.groupby('video_fname'):
-            ax[1].scatter(d2['time'][d2['time'] <= 50], d2['tempK'][d2['time'] <= 50], marker='.', label=runtype)
-        ax[1].plot(xxs, yys, 'k', label='exp fitted - {}'.format(runtype))
-        ax[1].set_ylabel('Temperature (K)')
-        ax[1].set_xlabel('Time (s)')
-        ax[1].legend()
-for ins, params in curve_parameters.items():
-    print(ins)
-    for k, param in params.items():
-        print('\t{}: {}'.format(k, param))
+            ax2.scatter(d2['time'][d2['time'] <= 50], d2['tempK'][d2['time'] <= 50]- 273.15, marker='+', label=runtype)
+        ax2.plot(xxs, yys, 'k', label='exp fitted - {}'.format(runtype))
+        ax2.set_ylabel('Temperature (C)')
+        ax2.set_xlabel('Time (s)')
+        ax2.legend()
+
+pd.DataFrame(curve_parameters).to_csv('table1.csv')
 plt.show()
 
 
